@@ -1,0 +1,66 @@
+# Build directories and binaries
+/build/
+/cmake-build-*/
+/Project
+/Assignment02
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+a.out
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+
+# Compiler dependency files
+*.d
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# LaTeX generated files
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.bbl
+*.blg
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.xcp
+
+# Proposal: ignore everything except the ACM template directory
+/proposal/*
+!/proposal/Association_for_Computing_Machinery__ACM____Large_1_Column_Format_Template/
+
+# Ignore generated files inside the ACM template directory
+/proposal/Association_for_Computing_Machinery__ACM____Large_1_Column_Format_Template/*.aux
+/proposal/Association_for_Computing_Machinery__ACM____Large_1_Column_Format_Template/*.fdb_latexmk
+/proposal/Association_for_Computing_Machinery__ACM____Large_1_Column_Format_Template/*.fls
+/proposal/Association_for_Computing_Machinery__ACM____Large_1_Column_Format_Template/*.log
+/proposal/Association_for_Computing_Machinery__ACM____Large_1_Column_Format_Template/*.out
+/proposal/Association_for_Computing_Machinery__ACM____Large_1_Column_Format_Template/*.synctex.gz
+/proposal/Association_for_Computing_Machinery__ACM____Large_1_Column_Format_Template/*.toc
+
+# OS files
+.DS_Store
+Thumbs.db

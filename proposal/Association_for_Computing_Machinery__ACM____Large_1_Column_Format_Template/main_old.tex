@@ -1,0 +1,85 @@
+\documentclass[acmlarge,nonacm]{acmart}
+
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+\setcopyright{none}
+
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.5em}
+\setlength{\parskip}{2pt}
+
+\begin{document}
+
+\title{Procedural Noise and Textures: Gradient Noise, Fractal Sums, and Noise-Driven Materials}
+\subtitle{CS Computer Graphics Course Project -- Summary and Plan (Team 11, CG\_04)}
+
+\author{Keshav Singh}
+\email{keshav24300@iiitd.ac.in}
+\affiliation{\institution{IIIT Delhi}\country{India}}
+
+\author{Karanveer Singh}
+\email{karanveer24294@iiitd.ac.in}
+\affiliation{\institution{IIIT Delhi}\country{India}}
+
+\begin{abstract}
+We will implement Perlin's gradient noise and use it to build fractal (fBm), turbulence, marble, wood and cloud textures on the GPU, extend it with noise-based bump mapping, and study how octave count and persistence trade off visual quality against cost.
+\end{abstract}
+
+\maketitle
+
+\noindent\textbf{Index.}\;
+\S\ref{sec:topic} Topic and Reference $\cdot$
+\S\ref{sec:problem} Problem and Objective $\cdot$
+\S\ref{sec:primary} Primary Implementation $\cdot$
+\S\ref{sec:ext} Proposed Extension $\cdot$
+\S\ref{sec:exp} Proposed Experiment $\cdot$
+\S\ref{sec:plan} Implementation Plan $\cdot$
+\S\ref{sec:challenges} Expected Challenges $\cdot$
+\S\ref{sec:team} Team Responsibilities
+
+\section{Project Topic and Reference Paper}\label{sec:topic}
+\textbf{Title:} Procedural Noise and Textures (CG\_04). \textbf{Reference:} K.~Perlin, ``An Image Synthesizer,'' \emph{Proc.\ ACM SIGGRAPH '85} (Computer Graphics 19(3)), pp.~287--296, 1985. DOI: 10.1145/325334.325247~\cite{perlin1985}. We will also consult Perlin's later ``Improving Noise''~\cite{perlin2002} for the revised interpolant.
+
+\section{Problem and Objective}\label{sec:problem}
+Hand-painted or image-based textures need storage, tile visibly, and are hard to vary. The paper addresses this by synthesizing surface detail \emph{procedurally}: a band-limited, pseudo-random \emph{gradient noise} function $n(\mathbf{x})$ is evaluated per sample, and its scaled copies are summed to mimic the self-similar structure of natural materials, giving resolution-independent, parameterizable textures at tiny memory cost. Our objective is to implement this pipeline end-to-end in a real-time shader framework, produce a small family of convincing materials, and understand quantitatively how the noise parameters control appearance and cost.
+
+\section{Primary Implementation}\label{sec:primary}
+The minimum system we commit to completing:
+\begin{itemize}
+\item \textbf{Gradient noise} in 2D and 3D: integer lattice, pseudo-random gradient per lattice point, dot products with offset vectors, and smooth interpolation (we implement both the original cubic $3t^2-2t^3$ and the improved quintic $6t^5-15t^4+10t^3$ fade).
+\item \textbf{Fractal sums:} fBm $\sum_i p^i\,n(2^i\mathbf{x})$ with controllable octaves and persistence $p$, and \textbf{turbulence} $\sum_i p^i\,|n(2^i\mathbf{x})|$.
+\item \textbf{Procedural textures} built on these: marble (sine of coordinate plus turbulence), wood (concentric rings perturbed by noise), and clouds (fBm mapped to a sky colour ramp), applied to 3D objects using object-space coordinates.
+\end{itemize}
+
+\section{Proposed Extension}\label{sec:ext}
+\textbf{Noise-driven bump mapping with animation.} Following the paper's surface-perturbation idea, we compute the (analytic or finite-difference) gradient of the fBm height field and use it to perturb the surface normal before Phong lighting, so noise produces apparent relief (e.g.\ rough stone/bark) without extra geometry. Time as the third noise axis will animate the clouds and surface. This may change if time is short, with procedural displacement geometry as the fallback.
+
+\section{Proposed Experiment}\label{sec:exp}
+\textbf{Question:} how do the number of octaves $N$, the persistence $p$, and the base frequency affect visual quality and computational cost, and beyond which octave does extra detail stop being perceptible?
+
+\textbf{Varied:} $N\in\{1,\dots,12\}$, $p\in\{0.3,0.5,0.7\}$, base frequency, and fade curve (cubic vs.\ quintic). \textbf{Measured:} (i) GPU frame time per texture (OpenGL timer queries, fixed resolution, averaged over many frames); (ii) the radially averaged power spectrum of rendered fBm images, to check the slope against $p$; (iii) image difference (RMSE) between $N$ octaves and a 12-octave reference, plus side-by-side renderings. \textbf{Expected:} cost grows roughly linearly with $N$; spectral energy falls off as a power law controlled by $p$; the image converges after a few octaves, and octaves whose frequency exceeds the pixel Nyquist limit add aliasing/shimmer rather than detail. We also expect cubic fading to show faint grid-aligned artifacts in the derivative that quintic removes, visible under bump mapping.
+
+\section{Implementation Plan}\label{sec:plan}
+\textbf{Stack:} C++ with OpenGL 3.3 core and GLSL, GLFW and GLAD for windowing/loading, GLM for math. \textbf{Input:} no external data; scenes use simple meshes (plane, sphere, cube/wall) with positions, UVs and normals, and all textures are computed in the fragment shader.
+\textbf{Stages:}
+(1) scene/shader framework with interactive camera and uniform-driven parameters;
+(2) hash-based gradient noise in 2D/3D, validated by visualizing raw noise;
+(3) fBm and turbulence, then marble, wood and cloud materials;
+(4) bump-mapping and time animation (extension);
+(5) experiment harness: parameter sweeps, timer queries, screenshot export, and a Python (NumPy/Matplotlib) script for spectra and error plots;
+(6) report and demonstration scenes.
+\textbf{Simplifications relative to the paper:} we compute lattice gradients with an integer hash instead of Perlin's permutation table with fixed gradient set; we run on the GPU in real time rather than as an offline shading-language renderer; we do not implement the paper's full shading language or antialiasing machinery, only simple octave fading by pixel footprint if time permits.
+
+\section{Expected Challenges}\label{sec:challenges}
+(1)~\emph{Band-limiting and aliasing:} high octaves alias under minification, so choosing and justifying a per-pixel octave cutoff (e.g.\ via screen-space derivatives) needs care. (2)~\emph{Hash/gradient quality and fair measurement:} poor GPU hashes cause visible repetition or directional artifacts, and timer-query results are noisy and driver-dependent, so the experiment needs controlled settings and repeated runs.
+
+\section{Team Responsibilities}\label{sec:team}
+\textbf{Keshav Singh:} noise core (hashing, gradient noise, interpolants), fBm/turbulence, marble/wood/cloud materials. \textbf{Karanveer Singh:} rendering framework and camera, bump-mapping/animation extension, experiment harness and analysis scripts. Both members will review each other's code, run the experiments together, and prepare to explain every component.
+
+\begin{thebibliography}{9}
+\bibitem{perlin1985} Ken Perlin. 1985. An Image Synthesizer. \emph{Computer Graphics (SIGGRAPH '85)} 19, 3, 287--296. https://doi.org/10.1145/325334.325247
+\bibitem{perlin2002} Ken Perlin. 2002. Improving Noise. \emph{ACM Trans.\ Graph. (SIGGRAPH '02)} 21, 3, 681--682.
+\end{thebibliography}
+
+\end{document}
